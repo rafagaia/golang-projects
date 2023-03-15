@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -59,5 +60,31 @@ func Test_prompt(t *testing.T) {
 	// perform our test (cast slice of bytes from ReadAll into string)
 	if string(out) != "-> " {
 		t.Errorf("Incorrect prompt: expected '-> ' but got '%s'.", string(out))
+	}
+}
+
+func Test_intro(t *testing.T) {
+	// save a copy of os.Stdout
+	oldOut := os.Stdout
+
+	// create a read and write pipe (_ is for err. Ignoring that)
+	r, w, _ := os.Pipe()
+
+	// set os.Stdout to our write pipe
+	os.Stdout = w
+
+	intro()
+
+	//close our writer
+	_ = w.Close()
+
+	// reset os.Stdout to what it was before
+	os.Stdout = oldOut
+
+	// read the output of our prompt function from our read pipe
+	out, _ := io.ReadAll(r)
+
+	if !strings.Contains(string(out), "Enter an Integer number") {
+		t.Errorf("Intro text not correct; got '%s'", string(out))
 	}
 }
