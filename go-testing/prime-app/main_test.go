@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func Test_isPrime(t *testing.T) {
+func Test_beta_isPrime(t *testing.T) {
 	primeTests := []struct {
 		name     string
 		testNum  int
@@ -38,7 +38,7 @@ func Test_isPrime(t *testing.T) {
 }
 
 // Test output that's written to the console
-func Test_prompt(t *testing.T) {
+func Test_beta_prompt(t *testing.T) {
 	// save a copy of os.Stdout
 	oldOut := os.Stdout
 
