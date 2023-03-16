@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"os"
 	"strings"
@@ -103,6 +104,7 @@ func Test_checkNumbers(t *testing.T) {
 		{name: "seven", input: "7", expected: "7 is a prime number."},
 		{name: "negative", input: "-5", expected: "Negative numbers (-5) are not prime."},
 		{name: "typed_number", input: "five", expected: "Please enter an Integer!"},
+		{name: "decimal", input: "2.3", expected: "Please enter an Integer!"},
 		{name: "quit", input: "q", expected: ""},
 		{name: "QUIT", input: "Q", expected: ""},
 		{name: "special_chars", input: "$#@", expected: "Please enter an Integer!"},
@@ -118,4 +120,19 @@ func Test_checkNumbers(t *testing.T) {
 			t.Errorf("%s: expected %s, but got %s", e.name, e.expected, res)
 		}
 	}
+}
+
+func Test_readUserInput(t *testing.T) {
+	// need a channel and instance to an io.Reader
+	doneChan := make(chan bool)
+
+	// create a reference to a bytes.Buffer
+	//		has required method that satisfies it being a type io.Reader - just need its Read method
+	var stdin bytes.Buffer
+
+	stdin.Write([]byte("1\nq\n"))
+
+	go readUserInput(&stdin, doneChan)
+	<-doneChan
+	close(doneChan)
 }
