@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -60,5 +62,24 @@ func Test_application_middleware(t *testing.T) {
 
 		// call dummy handler to perform test. Requires ResponseWriter
 		handlerToTest.ServeHTTP(httptest.NewRecorder(), request)
+	}
+}
+
+func Test_application_ipFromContext(t *testing.T) {
+	// createa an app var of type application
+	var app application
+
+	// get a context
+	ctx := context.Background()
+
+	// put something in the context
+	ctx = context.WithValue(ctx, contextUserKey, "a value to context")
+
+	// call the function
+	ip := app.ipFromContext(ctx)
+
+	// perform the test
+	if !strings.EqualFold("a value to context", ip) {
+		t.Error("wrong value returned from context")
 	}
 }
