@@ -17,35 +17,35 @@ func (app *application) ipFromContext(ctx context.Context) string {
 
 func (app *application) addIPToContext(next http.Handler) http.Handler {
 	//return inline function
-	return http.HandlerFunc(func(write http.ResponseWriter, read *http.Request) {
+	return http.HandlerFunc(func(write http.ResponseWriter, req *http.Request) {
 		var ctx = context.Background()
 		// get the ip (as accurately as possible)
-		ip, err := getIP(read)
+		ip, err := getIP(req)
 		if err != nil {
-			ip, _, _ = net.SplitHostPort(read.RemoteAddr)
+			ip, _, _ = net.SplitHostPort(req.RemoteAddr)
 			if len(ip) == 0 {
 				ip = "unknown"
 			}
-			ctx = context.WithValue(read.Context(), contextUserKey, ip)
+			ctx = context.WithValue(req.Context(), contextUserKey, ip)
 		} else {
-			ctx = context.WithValue(read.Context(), contextUserKey, ip)
+			ctx = context.WithValue(req.Context(), contextUserKey, ip)
 		}
-		next.ServeHTTP(write, read.WithContext(ctx))
+		next.ServeHTTP(write, req.WithContext(ctx))
 	})
 }
 
-func getIP(read *http.Request) (string, error) {
-	ip, _, err := net.SplitHostPort(read.RemoteAddr)
+func getIP(req *http.Request) (string, error) {
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err != nil {
 		return "unknown", err
 	}
 
 	userIP := net.ParseIP(ip)
 	if userIP == nil {
-		return "", fmt.Errorf("userip: %q is not IP:port", read.RemoteAddr)
+		return "", fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
 	}
 
-	forward := read.Header.Get("X-Forwarded-For")
+	forward := req.Header.Get("X-Forwarded-For")
 	if len(forward) > 0 {
 		ip = forward
 	}

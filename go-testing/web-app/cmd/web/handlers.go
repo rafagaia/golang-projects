@@ -29,6 +29,8 @@ func (app *application) renderPage(write http.ResponseWriter, request *http.Requ
 		return err
 	}
 
+	data.IP = app.ipFromContext(request.Context())
+
 	// execute the template, passing it data if any
 	err = parsedTemplate.Execute(write, data)
 	if err != nil {
