@@ -3,7 +3,10 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"path"
 )
+
+var pathToTemplates = "./templates/"
 
 /*
 *	- method with app receiver, as we'll need to share application data with handler
@@ -20,7 +23,7 @@ type TemplateData struct {
 
 func (app *application) renderPage(write http.ResponseWriter, request *http.Request, tmplt string, data *TemplateData) error {
 	// parse the template from disk
-	parsedTemplate, err := template.ParseFiles("./templates/" + tmplt)
+	parsedTemplate, err := template.ParseFiles(path.Join(pathToTemplates, tmplt))
 	if err != nil {
 		http.Error(write, "bad request", http.StatusBadRequest)
 		return err
