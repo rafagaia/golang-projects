@@ -8,10 +8,15 @@ import (
 )
 
 func (app *application) routes() http.Handler {
+	/*
+	*	- multiplexer to direct incoming http requests to appropriate handler functions
+	*		- used to register middleware and routes as well as serve static assets
+	**/
 	mux := chi.NewRouter()
 
-	// register middleware
+	// register middlewares
 	mux.Use(middleware.Recoverer)
+	mux.Use(app.addIPToContext)
 
 	// register routes
 	mux.Get("/", app.Home)
