@@ -50,6 +50,14 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// validate data
+	form := NewForm(req.PostForm)
+	form.Required("email", "password")
+	if !form.Valid() {
+		fmt.Fprint(write, "Failed Login Validation.")
+		return
+	}
+
 	email := req.Form.Get("email")
 	password := req.Form.Get("password")
 
