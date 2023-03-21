@@ -18,7 +18,6 @@ func Test_application_routes(t *testing.T) {
 		{"/static/*", "GET"},
 	}
 
-	var app application
 	// routes returns type httpHandler
 	mux := app.routes()
 
