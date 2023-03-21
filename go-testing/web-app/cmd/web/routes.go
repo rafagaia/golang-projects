@@ -17,6 +17,7 @@ func (app *application) routes() http.Handler {
 	// register middlewares
 	mux.Use(middleware.Recoverer)
 	mux.Use(app.addIPToContext)
+	mux.Use(app.Session.LoadAndSave) // persist session and load it on every request
 
 	// register routes
 	mux.Get("/", app.Home)
