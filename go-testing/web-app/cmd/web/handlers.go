@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"time"
 )
 
 var pathToTemplates = "./templates/"
@@ -14,8 +15,19 @@ var pathToTemplates = "./templates/"
 *	- method with app receiver, as we'll need to share application data with handler
 *		- as a handler, it needs something to write to
 **/
-func (app *application) Home(write http.ResponseWriter, request *http.Request) {
-	_ = app.renderPage(write, request, "home.page.gohtml", &TemplateData{})
+func (app *application) Home(write http.ResponseWriter, req *http.Request) {
+	var td = make(map[string]any)
+
+	if app.Session.Exists(req.Context(), "test") {
+		msg := app.Session.GetString(req.Context(), "test")
+		td["test"] = msg
+	} else {
+		app.Session.Put(
+			req.Context(),
+			"test",
+			"Hit this page at "+time.Now().UTC().String())
+	}
+	_ = app.renderPage(write, req, "home.page.gohtml", &TemplateData{Data: td})
 }
 
 type TemplateData struct {
