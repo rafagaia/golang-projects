@@ -10,7 +10,7 @@ import (
 )
 
 func Test_application_handlers(t *testing.T) {
-	var theTests = []struct {
+	var tests = []struct {
 		name               string
 		url                string
 		expectedStatusCode int
@@ -27,7 +27,7 @@ func Test_application_handlers(t *testing.T) {
 	defer ts.Close()
 
 	// range through test data
-	for _, e := range theTests {
+	for _, e := range tests {
 		// call built-in test server, request to specified url
 		response, err := ts.Client().Get(ts.URL + e.url)
 		if err != nil {
