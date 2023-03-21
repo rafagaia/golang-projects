@@ -16,7 +16,7 @@ func Test_application_handlers(t *testing.T) {
 		expectedStatusCode int
 	}{
 		{"home", "/", http.StatusOK},
-		{"404", "/fish", http.StatusNotFound},
+		{"404", "/cat", http.StatusNotFound},
 	}
 
 	routes := app.routes()
@@ -25,8 +25,6 @@ func Test_application_handlers(t *testing.T) {
 	ts := httptest.NewTLSServer(routes)
 	// when we're done with the test function, close the server:
 	defer ts.Close()
-
-	pathToTemplates = "./../../templates/"
 
 	// range through test data
 	for _, e := range theTests {

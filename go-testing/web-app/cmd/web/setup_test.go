@@ -18,6 +18,8 @@ var app application
 *
 **/
 func TestMain(m *testing.M) {
+	pathToTemplates = "./../../templates/"
+
 	app.Session = getSession()
 
 	os.Exit(m.Run())
