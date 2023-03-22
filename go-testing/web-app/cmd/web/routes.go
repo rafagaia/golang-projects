@@ -22,7 +22,15 @@ func (app *application) routes() http.Handler {
 	// register routes
 	mux.Get("/", app.Home)
 	mux.Post("/login", app.Login)
-	mux.Get("/user/profile", app.Profile)
+
+	/* no longer needs mux.Get("/user/profile", app.Profile):
+	* a means to securing access to profile particular page.
+	* whenever someone goes to /user/profile, following middleware is applied:
+	**/
+	mux.Route("/user", func(mux chi.Router) {
+		mux.Use(app.auth)
+		mux.Get("/profile", app.Profile)
+	})
 
 	// static assets (things that are not html. Js, css, images...)
 	fileServer := http.FileServer(http.Dir("./static/"))

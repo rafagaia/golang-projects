@@ -117,6 +117,7 @@ func (app *application) authenticate(req *http.Request, user *data.User, passwor
 		return false
 	}
 
+	// user added to Session, that's how we know if logged in or not
 	app.Session.Put(req.Context(), "user", user)
 
 	return true

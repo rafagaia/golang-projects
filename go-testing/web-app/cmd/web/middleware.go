@@ -56,3 +56,14 @@ func getIP(req *http.Request) (string, error) {
 
 	return ip, nil
 }
+
+func (app *application) auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(write http.ResponseWriter, req *http.Request) {
+		if !app.Session.Exists(req.Context(), "user") {
+			app.Session.Put(req.Context(), "error", "Log in first!")
+			http.Redirect(write, req, "/", http.StatusTemporaryRedirect)
+			return
+		}
+		next.ServeHTTP(write, req)
+	})
+}
