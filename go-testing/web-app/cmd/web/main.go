@@ -31,6 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// don't close until current function (main) exits
+	defer conn.Close()
+
 	app.DB = db.PostgresConn{DB: conn}
 
 	// get a session manager
