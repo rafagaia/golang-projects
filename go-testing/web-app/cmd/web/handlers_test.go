@@ -5,9 +5,25 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
+
+// helper function
+func getCtx(req *http.Request) context.Context {
+	ctx := context.WithValue(req.Context(), contextUserKey, "unknown")
+	return ctx
+}
+
+// helper function
+func addContextAndSessionToRequest(req *http.Request, app application) *http.Request {
+	req = req.WithContext(getCtx(req))
+
+	ctx, _ := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
+
+	return req.WithContext(ctx)
+}
 
 func Test_application_handlers(t *testing.T) {
 	var tests = []struct {
@@ -94,17 +110,78 @@ func TestApp_renderWithBadTemplate(t *testing.T) {
 	pathToTemplates = "./../../templates/"
 }
 
-func getCtx(req *http.Request) context.Context {
-	ctx := context.WithValue(req.Context(), contextUserKey, "unknown")
-	return ctx
-}
+// table test
+func TestApp_Login(t *testing.T) {
+	var tests = []struct {
+		name               string
+		postedData         url.Values // what GO expects from a Form Post. Wrapper for some strings.
+		expectedStatusCode int
+		expectedLoc        string
+	}{
+		{
+			name: "valid login",
+			postedData: url.Values{
+				"email":    {"admin@example.com"}, // can be sending a checkbox for example, not just a string. Thus the {}
+				"password": {"secret"},
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc:        "/user/profile",
+		},
+		{
+			name: "missing form data",
+			postedData: url.Values{
+				"email":    {""},
+				"password": {""},
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc:        "/",
+		},
+		{
+			name: "user not found",
+			postedData: url.Values{
+				"email":    {"invalid@email.com"}, // can be sending a checkbox for example, not just a string. Thus the {}
+				"password": {"anypassword"},
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc:        "/",
+		},
+		{
+			name: "bad credentials",
+			postedData: url.Values{
+				"email":    {"admin@example.com"}, // can be sending a checkbox for example, not just a string. Thus the {}
+				"password": {"wrongpassword"},
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc:        "/",
+		},
+	}
 
-func addContextAndSessionToRequest(req *http.Request, app application) *http.Request {
-	req = req.WithContext(getCtx(req))
+	for _, e := range tests {
+		req, _ := http.NewRequest(
+			"POST",
+			"/login",
+			strings.NewReader(e.postedData.Encode()), //Encode convers postedData to an io.Reader
+		)
+		req = addContextAndSessionToRequest(req, app)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded") // content-type that go expects to find from an html form post
+		// ResponseRecorder
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.Login)
+		handler.ServeHTTP(rr, req)
 
-	ctx, _ := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("%s: returned wrong status code; expected %d, but got %d.", e.name, e.expectedStatusCode, rr.Code)
+		}
 
-	return req.WithContext(ctx)
+		actualLoc, err := rr.Result().Location()
+		if err == nil {
+			if actualLoc.String() != e.expectedLoc {
+				t.Errorf("%s: expected location %s but got %s.", e.name, e.expectedLoc, actualLoc.String())
+			}
+		} else {
+			t.Errorf("%s: no location header set.", e.name)
+		}
+	}
 }
 
 /*
