@@ -95,11 +95,13 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Println(password, user.FirstName)
-
 	// got the User. Authenticate the user.
 	// if not authenticated then redirect with error
-
+	if !app.authenticate(req, user, password) {
+		app.Session.Put(req.Context(), "error", "Invalid login!")
+		http.Redirect(write, req, "/", http.StatusSeeOther)
+		return
+	}
 	// prevent fixation attack
 	_ = app.Session.RenewToken(req.Context())
 
@@ -108,4 +110,14 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 
 	// redirect to some other page
 	http.Redirect(write, req, "/user/profile", http.StatusSeeOther)
+}
+
+func (app *application) authenticate(req *http.Request, user *data.User, password string) bool {
+	if valid, err := user.PasswordMatches(password); err != nil || !valid {
+		return false
+	}
+
+	app.Session.Put(req.Context(), "user", user)
+
+	return true
 }
