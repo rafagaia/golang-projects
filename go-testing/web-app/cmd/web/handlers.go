@@ -68,7 +68,9 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 	form := NewForm(req.PostForm)
 	form.Required("email", "password")
 	if !form.Valid() {
-		fmt.Fprint(write, "Failed Login Validation.")
+		// redirect to the login page with error message
+		app.Session.Put(req.Context(), "error", "Invalid login credentials")
+		http.Redirect(write, req, "/", http.StatusSeeOther)
 		return
 	}
 
