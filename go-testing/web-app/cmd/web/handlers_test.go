@@ -27,12 +27,15 @@ func addContextAndSessionToRequest(req *http.Request, app application) *http.Req
 
 func Test_application_handlers(t *testing.T) {
 	var tests = []struct {
-		name               string
-		url                string
-		expectedStatusCode int
+		name                    string
+		url                     string
+		expectedStatusCode      int
+		expectedURL             string
+		expectedFirstStatusCode int
 	}{
-		{"home", "/", http.StatusOK},
-		{"404", "/cat", http.StatusNotFound},
+		{"home", "/", http.StatusOK, "/", http.StatusOK},
+		{"404", "/cat", http.StatusNotFound, "/cat", http.StatusNotFound},
+		{"profile", "/user/profile", http.StatusOK, "/", http.StatusTemporaryRedirect},
 	}
 
 	routes := app.routes()
@@ -51,8 +54,13 @@ func Test_application_handlers(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// check for final status code getting back, as there's a status code before redirect, and one after
 		if response.StatusCode != e.expectedStatusCode {
 			t.Errorf("for %s: expected status %d, but got %d", e.name, e.expectedStatusCode, response.StatusCode)
+		}
+
+		if response.Request.URL.Path != e.expectedURL {
+			t.Errorf("%s: expected final url of %s; but got %s.", e.name, e.expectedURL, response.Request.URL.Path)
 		}
 	}
 }
