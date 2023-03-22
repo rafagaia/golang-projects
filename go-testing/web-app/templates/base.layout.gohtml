@@ -13,6 +13,25 @@
 </head>
 <body>
 
+<div class="container">
+    <div class="row">
+        <div class="content">
+            {{with .Flash}}
+                <div class="mt-03 alert alert-success" role="alert">
+                    {{.}}
+                </div>
+            {{end}}
+
+            {{with .Error}}
+                <div class="mt-03 alert alert-danger" role="alert">
+                    {{.}}
+                </div>
+            {{end}}
+
+        </div>
+    </div>
+</div>
+
 {{/* the dot is for data.  Will take any data that the base layer receives and pass to this block*/}}
 {{block "content" .}}
 {{/* this is what changes on a per-page basis */}}

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path"
 	"time"
+	"webapp/pkg/data"
 )
 
 var pathToTemplates = "./templates/"
@@ -30,12 +30,19 @@ func (app *application) Home(write http.ResponseWriter, req *http.Request) {
 	_ = app.renderPage(write, req, "home.page.gohtml", &TemplateData{Data: td})
 }
 
-type TemplateData struct {
-	IP   string
-	Data map[string]any // any = alias to interface
+func (app *application) Profile(write http.ResponseWriter, req *http.Request) {
+	_ = app.renderPage(write, req, "profile.page.gohtml", &TemplateData{})
 }
 
-func (app *application) renderPage(write http.ResponseWriter, request *http.Request, tmplt string, data *TemplateData) error {
+type TemplateData struct {
+	IP    string
+	Data  map[string]any // any = alias to interface
+	Error string
+	Flash string
+	User  data.User
+}
+
+func (app *application) renderPage(write http.ResponseWriter, request *http.Request, tmplt string, td *TemplateData) error {
 	// parse the template from disk
 	parsedTemplate, err := template.ParseFiles(
 		path.Join(pathToTemplates, tmplt),
@@ -45,10 +52,13 @@ func (app *application) renderPage(write http.ResponseWriter, request *http.Requ
 		return err
 	}
 
-	data.IP = app.ipFromContext(request.Context())
+	td.IP = app.ipFromContext(request.Context())
+
+	td.Error = app.Session.PopString(request.Context(), "error")
+	td.Flash = app.Session.PopString(request.Context(), "flash")
 
 	// execute the template, passing it data if any
-	err = parsedTemplate.Execute(write, data)
+	err = parsedTemplate.Execute(write, td)
 	if err != nil {
 		return err
 	}
@@ -79,10 +89,23 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 
 	user, err := app.DB.GetUserByEmail(email)
 	if err != nil {
-		log.Println(err)
+		// redirect to the login page with error message
+		app.Session.Put(req.Context(), "error", "Invalid login!")
+		http.Redirect(write, req, "/", http.StatusSeeOther)
+		return
 	}
-	log.Println("From database:", user.FirstName)
 
-	log.Println(email, password)
-	fmt.Fprint(write, email)
+	log.Println(password, user.FirstName)
+
+	// got the User. Authenticate the user.
+	// if not authenticated then redirect with error
+
+	// prevent fixation attack
+	_ = app.Session.RenewToken(req.Context())
+
+	//store success message in session
+	app.Session.Put(req.Context(), "flash", "Successfully logged in!")
+
+	// redirect to some other page
+	http.Redirect(write, req, "/user/profile", http.StatusSeeOther)
 }
