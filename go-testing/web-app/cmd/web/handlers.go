@@ -75,7 +75,12 @@ func (app *application) Login(write http.ResponseWriter, req *http.Request) {
 	email := req.Form.Get("email")
 	password := req.Form.Get("password")
 
-	log.Println(email, password)
+	user, err := app.DB.GetUserByEmail(email)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("From database:", user.FirstName)
 
+	log.Println(email, password)
 	fmt.Fprint(write, email)
 }
