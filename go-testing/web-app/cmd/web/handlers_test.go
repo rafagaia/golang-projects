@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -45,6 +46,21 @@ func Test_application_handlers(t *testing.T) {
 	// when we're done with the test function, close the server:
 	defer ts.Close()
 
+	// ----> Custom HTTP Client - so we're not limited to the 10 redirects of default http client used in the for loop in this test function:
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // accept invalid ssl certificates (not signed) so we can use our custom client without throwing unknown certficate error
+	}
+
+	// create the client and override some default configs
+	client := &http.Client{
+		Transport: tr,
+		CheckRedirect: func(request *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse // so we only return the first response code
+		},
+	}
+
+	// Custom HTTP Client <-----
+
 	// range through test data
 	for _, e := range tests {
 		// call built-in test server, request to specified url
@@ -61,6 +77,11 @@ func Test_application_handlers(t *testing.T) {
 
 		if response.Request.URL.Path != e.expectedURL {
 			t.Errorf("%s: expected final url of %s; but got %s.", e.name, e.expectedURL, response.Request.URL.Path)
+		}
+
+		response2, _ := client.Get(ts.URL + e.url)
+		if response2.StatusCode != e.expectedFirstStatusCode {
+			t.Errorf("%s: expected first response status code to be %d; but got %d.", e.name, e.expectedFirstStatusCode, response2.StatusCode)
 		}
 	}
 }
