@@ -162,4 +162,25 @@ func Test_PostgresDBRepo_AllUsers(t *testing.T) {
 	if len(users) != 1 {
 		t.Errorf("AllUsers returned wrong size; expected 1, but got: %d.", len(users))
 	}
+
+	testUser := data.User{
+		FirstName: "Second",
+		LastName:  "User",
+		Email:     "secondUser@example.com",
+		Password:  "secret",
+		IsAdmin:   0,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	_, _ = testRepo.InsertUser(testUser)
+
+	users, err = testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("AllUsers returned an error: %s.", err)
+	}
+
+	if len(users) != 2 {
+		t.Errorf("AllUsers returned wrong size; expected 2, but got: %d.", len(users))
+	}
 }
