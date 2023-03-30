@@ -230,3 +230,16 @@ func Test_PostgresDBRepo_UpdateUser(t *testing.T) {
 			but got: %s, %s, %s`, user.FirstName, user.LastName, user.Email)
 	}
 }
+
+func Test_PostgresDBRepo_DeleteUser(t *testing.T) {
+	err := testRepo.DeleteUser(2)
+	if err != nil {
+		t.Errorf("DeleteUser with ID: 2 errored: %s", err)
+	}
+
+	user, _ := testRepo.GetUser(2) // or _, err = testRepo.GetUser(2), then check if err == nil
+	if user != nil {
+		t.Error("DeleteUser expected to have deleted user with ID: 2; but did not.")
+	}
+
+}
