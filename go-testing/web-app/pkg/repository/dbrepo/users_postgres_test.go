@@ -194,6 +194,11 @@ func Test_PostgresDBRepo_GetUserById(t *testing.T) {
 	if user.Email != "admin@example.com" {
 		t.Errorf("GetUser expected user email admin@example.com; but got: %s", user.Email)
 	}
+
+	_, err = testRepo.GetUser(3)
+	if err == nil {
+		t.Error("GetUserById: no error reported when getting non-existent user by ID.")
+	}
 }
 
 func Test_PostgresDBRepo_GetUserByEmail(t *testing.T) {
@@ -204,5 +209,24 @@ func Test_PostgresDBRepo_GetUserByEmail(t *testing.T) {
 
 	if user.ID != 2 {
 		t.Errorf("GetUser expected user ID 2; but got: %d", user.ID)
+	}
+}
+
+func Test_PostgresDBRepo_UpdateUser(t *testing.T) {
+	user, _ := testRepo.GetUser(2)
+	user.FirstName = "Rafa"
+	user.LastName = "Gaia"
+	user.Email = "gaia@stark.com"
+
+	err := testRepo.UpdateUser(*user)
+	if err != nil {
+		t.Errorf("UpdateUser with ID %d errored: %s.", 2, err)
+	}
+
+	user, _ = testRepo.GetUser(2)
+	if user.FirstName != "Rafa" || user.LastName != "Gaia" || user.Email != "gaia@stark.com" {
+		t.Errorf(`UpdateUser expected record with
+			FirstName: Rafa, LastName: Gaia, Email: gaia@stark.com;
+			but got: %s, %s, %s`, user.FirstName, user.LastName, user.Email)
 	}
 }
