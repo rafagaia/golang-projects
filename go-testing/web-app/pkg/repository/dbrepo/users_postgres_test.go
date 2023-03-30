@@ -184,3 +184,25 @@ func Test_PostgresDBRepo_AllUsers(t *testing.T) {
 		t.Errorf("AllUsers returned wrong size; expected 2, but got: %d.", len(users))
 	}
 }
+
+func Test_PostgresDBRepo_GetUserById(t *testing.T) {
+	user, err := testRepo.GetUser(1)
+	if err != nil {
+		t.Errorf("Error getting user by id: %s.", err)
+	}
+
+	if user.Email != "admin@example.com" {
+		t.Errorf("GetUser expected user email admin@example.com; but got: %s", user.Email)
+	}
+}
+
+func Test_PostgresDBRepo_GetUserByEmail(t *testing.T) {
+	user, err := testRepo.GetUserByEmail("secondUser@example.com")
+	if err != nil {
+		t.Errorf("Error getting user by email: %s.", err)
+	}
+
+	if user.ID != 2 {
+		t.Errorf("GetUser expected user ID 2; but got: %d", user.ID)
+	}
+}
