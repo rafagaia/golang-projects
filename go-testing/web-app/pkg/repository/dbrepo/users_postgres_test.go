@@ -242,3 +242,20 @@ func Test_PostgresDBRepo_DeleteUser(t *testing.T) {
 		t.Error("DeleteUser expected to have deleted user with ID: 2; but did not.")
 	}
 }
+
+func Test_PostgresDBRepo_ResetPassword(t *testing.T) {
+	err := testRepo.ResetPassword(1, "new_password")
+	if err != nil {
+		t.Error("Error reseting user(ID=1)'s password: ", err)
+	}
+
+	user, _ := testRepo.GetUser(1)
+	matches, err := user.PasswordMatches("new_password")
+	if err != nil {
+		t.Error("Error checking match in reset password: ", err)
+	}
+
+	if !matches {
+		t.Errorf("ResetPassword expected to match 'new_password'; but does not")
+	}
+}
