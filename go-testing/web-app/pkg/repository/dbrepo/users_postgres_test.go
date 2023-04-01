@@ -241,5 +241,4 @@ func Test_PostgresDBRepo_DeleteUser(t *testing.T) {
 	if user != nil {
 		t.Error("DeleteUser expected to have deleted user with ID: 2; but did not.")
 	}
-
 }

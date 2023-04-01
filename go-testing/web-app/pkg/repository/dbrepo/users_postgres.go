@@ -206,7 +206,14 @@ func (m *PostgresDBRepo) InsertUser(user data.User) (int, error) {
 
 // ResetPassword is the method we will use to change a user's password.
 func (m *PostgresDBRepo) ResetPassword(id int, password string) error {
+	// create a context with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	/*
+	* releases resources associated with the context and
+	* cancels any pending operations that use the context
+	* when timeout is no longer needed or surrounding
+	* function completes
+	**/
 	defer cancel()
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
