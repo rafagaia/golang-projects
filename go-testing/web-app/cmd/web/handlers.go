@@ -14,6 +14,7 @@ import (
 )
 
 var pathToTemplates = "./templates/"
+var uploadImagePath = "./static/img"
 
 /*
 *	- method with app receiver, as we'll need to share application data with handler
@@ -134,7 +135,7 @@ func (app *application) authenticate(req *http.Request, user *data.User, passwor
 
 func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) {
 	// call a function that extracts a file from an upload (request)
-	files, err := app.UploadFiles(r, "./static/img")
+	files, err := app.UploadFiles(r, uploadImagePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -177,7 +178,8 @@ type UploadedFile struct {
 }
 
 /*
-* handle upload(s) of file(s)
+* This function is not a handler.
+* Manages upload(s) of file(s)
 * 	considers situations where there is more than one file in request.
 * Obs: just a simple implementation.
 *		- no test of mime type of uploaded files

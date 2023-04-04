@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"webapp/pkg/data"
 )
 
 // helper function
@@ -250,6 +252,8 @@ func Test_app_UploadFiles(t *testing.T) {
 
 	// clean up any files created during test
 	_ = os.Remove(fmt.Sprintf("./testdata/uploads/%s", uploadedFiles[0].OriginalFileName))
+
+	wg.Wait()
 }
 
 func simulatePNGUpload(fileToUpload string, writer *multipart.Writer, wg *sync.WaitGroup, t *testing.T) {
@@ -283,4 +287,59 @@ func simulatePNGUpload(fileToUpload string, writer *multipart.Writer, wg *sync.W
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func Test_app_UploadProfilePic(t *testing.T) {
+	uploadImagePath = "./testdata/uploads"
+	filePath := "./testdata/test_img.png"
+
+	// specify a field name for the form
+	fieldName := "file"
+
+	// create a bytes.Buffer to act as the request body
+	body := new(bytes.Buffer)
+
+	// create a new writer (multiWriter)
+	mw := multipart.NewWriter(body)
+
+	// open file that we want to upload
+	file, err := os.Open(filePath) // if file exists, should have no error
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create a form file
+	w, err := mw.CreateFormFile(fieldName, filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// copy from source 'file' to destination 'w'
+	if _, err := io.Copy(w, file); err != nil {
+		t.Fatal(err)
+	}
+
+	// don't need multiWriter anymore, close to avoid resource leak:
+	mw.Close()
+
+	// build the request:
+	req := httptest.NewRequest(http.MethodPost, "/upload", body)
+	req = addContextAndSessionToRequest(req, app)
+	// put in a user in the session, with "user" key
+	app.Session.Put(req.Context(), "user", data.User{ID: 1})
+	req.Header.Add("Content-Type", mw.FormDataContentType())
+
+	// need a response recorder for performing test:
+	rr := httptest.NewRecorder()
+
+	handler := http.HandlerFunc(app.UploadProfilePic)
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusSeeOther {
+		t.Errorf("Wrong status code.")
+	}
+
+	// clean up uploaded test file:
+	_ = os.Remove("./testdata/uploads/test_img.png")
 }
