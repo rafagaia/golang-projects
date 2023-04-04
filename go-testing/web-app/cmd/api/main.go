@@ -42,7 +42,7 @@ func main() {
 	// wrap database connection in repository struct
 	app.DB = &dbrepo.PostgresDBRepo{DB: conn}
 
-	log.Printf("Starting REST API on port: %d...\n", PORT)
+	log.Printf("[SERVER] Starting REST API listening on port: %d...\n", PORT)
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", PORT), app.routes())
 	if err != nil {
