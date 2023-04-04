@@ -3,11 +3,18 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
+	"image"
+	"image/png"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -86,7 +93,7 @@ func Test_application_handlers(t *testing.T) {
 	}
 }
 
-func TestApp_Home(t *testing.T) {
+func Test_app_Home(t *testing.T) {
 	var tests = []struct {
 		name         string
 		putInSession string
@@ -123,7 +130,7 @@ func TestApp_Home(t *testing.T) {
 	}
 }
 
-func TestApp_renderWithBadTemplate(t *testing.T) {
+func Test_app_renderWithBadTemplate(t *testing.T) {
 	// set pathToTemplates to a location with a bad template
 	pathToTemplates = "./testdata/"
 
@@ -140,7 +147,7 @@ func TestApp_renderWithBadTemplate(t *testing.T) {
 }
 
 // table test
-func TestApp_Login(t *testing.T) {
+func Test_app_Login(t *testing.T) {
 	var tests = []struct {
 		name               string
 		postedData         url.Values // what GO expects from a Form Post. Wrapper for some strings.
@@ -213,24 +220,67 @@ func TestApp_Login(t *testing.T) {
 	}
 }
 
-/*
-func TestApp_Home_Old(t *testing.T) {
-	// create a request
-	req, _ := http.NewRequest("GET", "/", nil)
-	req = addContextAndSessionToRequest(req, app)
+func Test_app_UploadFiles(t *testing.T) {
+	// set up pipes (pipeRead, pipeWrite)
+	pr, pw := io.Pipe()
 
-	res := httptest.NewRecorder()
+	// create a new writer, of type *io.Writer
+	writer := multipart.NewWriter(pw)
 
-	handler := http.HandlerFunc(app.Home)
-	handler.ServeHTTP(res, req)
+	// create a waitgroup, and add 1 to its counter
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
-	// check status code
-	if res.Code != http.StatusOK {
-		t.Errorf("TestApp_Home returned wrong status code; expected 200 but got %d.", res.Code)
+	// simulate uploading a file using a goroutine and our writer
+	go simulatePNGUpload("./testdata/test_img.png", writer, wg, t)
+
+	// read from the pipe, which receives data
+	request := httptest.NewRequest("POST", "/anyurl", pr)
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+
+	// call app.UploadFiles
+	uploadedFiles, err := app.UploadFiles(request, "./testdata/uploads/")
+	if err != nil {
+		t.Error("Testing app UploadFiles error: ", err)
+	}
+	// perform our test cases
+	if _, err := os.Stat(fmt.Sprintf("./testdata/uploads/%s", uploadedFiles[0].OriginalFileName)); os.IsNotExist(err) {
+		t.Errorf("Expected file to exist: %s.", err.Error()) // this is the only case we need to test, because if file does not exist, UploadFiles failed
 	}
 
-	body, _ := io.ReadAll(res.Body)
-	if !strings.Contains(string(body), `<small>From Session:`) {
-		t.Error("Did not find correct text in HTML.")
+	// clean up any files created during test
+	_ = os.Remove(fmt.Sprintf("./testdata/uploads/%s", uploadedFiles[0].OriginalFileName))
+}
+
+func simulatePNGUpload(fileToUpload string, writer *multipart.Writer, wg *sync.WaitGroup, t *testing.T) {
+	// so we don't have any resource leaks:
+	defer writer.Close()
+	// subtract 1 from our waitgroup's counter
+	defer wg.Done()
+
+	// create the multipart-form data field 'file' with value being filename
+	part, err := writer.CreateFormFile("file", path.Base(fileToUpload))
+	if err != nil {
+		t.Error(err) // if we get the path name right, it should work fine without errors.
 	}
-}*/
+
+	// open the actual file that we're simulating an upload
+	f, err := os.Open(fileToUpload)
+	if err != nil {
+		t.Error(err) // if we get the path name right, it should work fine without errors.
+	}
+	// just to avoid resource leaks:
+	defer f.Close()
+
+	// decode the image (if we can upload a PNG, it should work for jpeg, gif, etc)
+	img, _, err := image.Decode(f)
+	if err != nil {
+		t.Error("Error decoding image: ", err)
+	}
+
+	// write the PNG to our io.Writer
+	err = png.Encode(part, img)
+	if err != nil {
+		t.Error(err)
+	}
+}
