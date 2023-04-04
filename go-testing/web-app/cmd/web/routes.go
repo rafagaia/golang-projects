@@ -28,8 +28,9 @@ func (app *application) routes() http.Handler {
 	* whenever someone goes to /user/profile, following middleware is applied:
 	**/
 	mux.Route("/user", func(mux chi.Router) {
-		mux.Use(app.auth)
+		mux.Use(app.auth) // middleware that determines whether or not user is logged in.
 		mux.Get("/profile", app.Profile)
+		mux.Post("/upload-profile-pic", app.UploadProfilePic)
 	})
 
 	// static assets (things that are not html. Js, css, images...)
