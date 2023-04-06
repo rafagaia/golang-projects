@@ -23,13 +23,14 @@ func (app *application) routes() http.Handler {
 	mux.Post("/refresh-token", app.refresh)
 
 	// test handler - for development
-	/*mux.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 		var payload = struct {
 			Message string `json:"message"`
 		}{
 			Message: "Greetings, humans!",
 		}
-	})*/
+		_ = app.writeJSON(w, http.StatusOK, payload)
+	})
 
 	// protected routes - must have a valid jwt token to access
 

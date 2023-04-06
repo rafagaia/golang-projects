@@ -8,7 +8,15 @@ import "net/http"
 *	3. if match found, generates and returns JSON with JWT Token
 **/
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
+	// read a JSON payload
 
+	// look up the user by email address
+
+	// check password
+
+	// generate tokens (jwt and refresh)
+
+	// send tokens to user
 }
 
 // takes JSON from client with a valid JWT Token, generates a new one, and returns it back
