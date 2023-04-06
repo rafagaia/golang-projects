@@ -21,8 +21,8 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
 	// read a JSON payload
 	err := app.readJSON(w, r, &creds)
-	if err != nil {
-		app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+	if err != nil || creds.Username == "" || creds.Password == "" {
+		app.errorJSON(w, errors.New("bad request"), http.StatusBadRequest)
 		return
 	}
 	// look up the user by email address
@@ -41,6 +41,7 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 	tokenPairs, err := app.generateTokenPair(user)
 	if err != nil {
 		app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+		return
 	}
 	// send tokens to user
 	_ = app.writeJSON(w, http.StatusOK, tokenPairs)
